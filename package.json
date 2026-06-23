@@ -1,0 +1,21 @@
+{
+	"name": "@svar-ui/kanban",
+	"version": "2.6.0",
+	"private": true,
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"build": "vp run kanban-locales#build && vp run kanban-provider#build && vp run kanban-store#build && vp run svelte-kanban#build",
+		"ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
+		"start": "vp run svelte-kanban-demos#start",
+		"prepare": "vp config"
+	},
+	"devDependencies": {
+		"vite-plus": "catalog:"
+	},
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"packageManager": "pnpm@10.32.1",
+	"productTag": "kanban"
+}

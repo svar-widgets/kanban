@@ -1,0 +1,58 @@
+{
+	"name": "@svar-ui/svelte-kanban-demos",
+	"version": "2.6.0",
+	"private": true,
+	"homepage": "https://svar.dev/svelte/kanban/",
+	"bugs": {
+		"url": "https://forum.svar.dev"
+	},
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/svar-widgets/kanban.git"
+	},
+	"files": [
+		"dist",
+		"readme.md",
+		"license.txt"
+	],
+	"type": "module",
+	"types": "./dist/index.d.ts",
+	"svelte": "./dist/index.js",
+	"exports": {
+		".": {
+			"svelte": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"build": "vp build",
+		"lint": "vp lint ./demos ./src",
+		"start": "vp dev --open",
+		"dev": "svelte-package -i ./src --watch"
+	},
+	"dependencies": {
+		"@svar-ui/core-locales": "catalog:",
+		"@svar-ui/kanban-locales": "workspace:*",
+		"@svar-ui/kanban-provider": "workspace:*",
+		"@svar-ui/svelte-comments": "catalog:",
+		"@svar-ui/svelte-core": "catalog:",
+		"@svar-ui/svelte-editor": "catalog:",
+		"@svar-ui/svelte-excel-import": "catalog:",
+		"@svar-ui/svelte-export-popup": "catalog:",
+		"@svar-ui/svelte-filter": "catalog:",
+		"@svar-ui/svelte-kanban": "workspace:*",
+		"@svar-ui/svelte-layout": "catalog:",
+		"@svar-ui/svelte-tasklist": "catalog:",
+		"@svar-ui/svelte-toolbar": "catalog:",
+		"svelte-spa-router": "catalog:",
+		"xlsx-writer-lite": "catalog:"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "catalog:",
+		"svelte": "catalog:",
+		"svelte-check": "catalog:"
+	}
+}
