@@ -62,5 +62,9 @@
 
 	.wx-ghost :global(.wx-card) {
 		cursor: grabbing;
+		width: 100%;
+		height: 100%;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 </style>

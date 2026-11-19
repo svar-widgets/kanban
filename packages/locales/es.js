@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "Administrar grupos",
+		Columns: "Columnas",
+		Swimlanes: "Carriles",
+		"Add column": "Añadir columna",
+		"Add swimlane": "Añadir carril",
+		"New column": "Nueva columna",
+		"New swimlane": "Nuevo carril",
+		Close: "Cerrar",
+		Reorder: "Reordenar",
+		"Group name": "Nombre del grupo",
+		"cards are not shown": "tarjetas no se muestran",
+		"Restore group": "Restaurar grupo",
+
 		Title: "Título",
 		Description: "Descripción",
 		Priority: "Prioridad",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "Editar tarjeta",
 		"Duplicate card": "Duplicar tarjeta",
 		"Delete card": "Eliminar tarjeta",
+		"Add card": "Añadir tarjeta",
 
 		"Kanban board": "Tablero Kanban",
+		"Expand swimlane": "Expandir carril",
+		"Collapse swimlane": "Contraer carril",
 		"Expand column": "Expandir columna",
 		"Collapse column": "Contraer columna",
 		"Add card to": "Añadir tarjeta a",
 		"Card menu": "Menú de la tarjeta",
+		"Column menu": "Menú de la columna",
 		Attachments: "Adjuntos",
 		Comments: "Comentarios",
 		Card: "Tarjeta",

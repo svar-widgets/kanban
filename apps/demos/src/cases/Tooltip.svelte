@@ -2,8 +2,11 @@
 	import { getData } from "../data.js";
 	import { Kanban } from "@svar-ui/svelte-kanban";
 	import CardTooltip from "../custom/CardTooltip.svelte";
+	import { DemoPage } from "../ui";
 
 	const { columns, cards } = getData();
 </script>
 
-<Kanban {cards} {columns} tooltip={CardTooltip} />
+<DemoPage>
+	<Kanban {cards} {columns} tooltip={CardTooltip} />
+</DemoPage>

@@ -1,3 +1,4 @@
+import { writeMembership } from "@svar-ui/kanban-store";
 import type { ColumnAccessor, ColumnID, KanbanCard } from "@svar-ui/kanban-store";
 import type { KanbanContextApi } from "../types.js";
 
@@ -6,6 +7,7 @@ export type DblClickAddCardParams = {
 	column: ColumnID;
 	columnAccessor: ColumnAccessor;
 	readonly?: boolean;
+	swimlane?: ColumnID;
 };
 
 export function dblclick(node: HTMLElement, initial: DblClickAddCardParams) {
@@ -16,7 +18,13 @@ export function dblclick(node: HTMLElement, initial: DblClickAddCardParams) {
 		if (e.target !== node) return;
 
 		const base = { label: "New card" } as unknown as KanbanCard;
-		const card = createColumnCard(base, params.columnAccessor, params.column);
+		let card = createColumnCard(base, params.columnAccessor, params.column);
+		if (params.swimlane !== undefined)
+			card = createColumnCard(
+				card,
+				params.store.getState().swimlaneAccessor,
+				params.swimlane
+			);
 
 		void params.store.exec("add-card", { card });
 	}
@@ -34,11 +42,9 @@ export function dblclick(node: HTMLElement, initial: DblClickAddCardParams) {
 }
 
 export function createColumnCard(
-	card: KanbanCard,
+	card: Partial<KanbanCard>,
 	accessor: ColumnAccessor,
 	column: ColumnID
-): KanbanCard {
-	return typeof accessor === "string"
-		? { ...card, [accessor]: column }
-		: accessor.set(card, column);
+): Partial<KanbanCard> {
+	return writeMembership(card as KanbanCard, accessor, column);
 }

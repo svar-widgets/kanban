@@ -31,7 +31,6 @@
 		/* kanban surfaces */
 		--wx-kanban-bg: #ffffff;
 		--wx-kanban-column-bg: #ffffff;
-		--wx-kanban-column-over-limit-bg: #ffffff;
 		--wx-kanban-card-bg: #ffffff;
 		--wx-kanban-tag-bg: #ffffff;
 		--wx-kanban-avatar-bg: #ffffff;
@@ -70,14 +69,8 @@
 	}
 
 	.wx-print-theme :global(.wx-column-header),
-	.wx-print-theme :global(.wx-scroll-board .wx-column-header),
-	.wx-print-theme :global(.wx-over-limit .wx-column-header),
-	.wx-print-theme :global(.wx-over-limit .wx-body) {
+	.wx-print-theme :global(.wx-scroll-board .wx-column-header) {
 		background: #ffffff;
-	}
-
-	.wx-print-theme :global(.wx-over-limit.wx-column) {
-		border-color: var(--wx-color-danger);
 	}
 
 	.wx-print-theme :global(.wx-card) {

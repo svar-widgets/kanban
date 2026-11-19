@@ -34,6 +34,23 @@ export class CardsStore {
 		return next;
 	}
 
+	/** Inserts before the anchor, or appends when it is null or unknown. */
+	addBefore(card: KanbanCard, before: CardID | null): KanbanCard {
+		this._assertHasId(card);
+
+		const next = { ...card };
+		const index =
+			before === null ? -1 : this._cards.findIndex(item => item.id === before);
+
+		if (index === -1) {
+			this._cards.push(next);
+		} else {
+			this._cards.splice(index, 0, next);
+		}
+
+		return next;
+	}
+
 	update(id: CardID, patch: Partial<KanbanCard>): KanbanCard | undefined {
 		const index = this._cards.findIndex(card => card.id === id);
 		if (index === -1) {

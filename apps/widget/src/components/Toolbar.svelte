@@ -25,7 +25,13 @@
 		"sort-priority-desc": { field: "priority", dir: "desc" },
 	};
 
-	let { api = null, items = [], undo = false, sort = false, add = true }: Props = $props();
+	let {
+		api = null,
+		items = [],
+		undo = false,
+		sort = false,
+		add = true,
+	}: Props = $props();
 
 	let l = getContext<ILocale | undefined>("wx-i18n");
 	if (!l) {

@@ -1,8 +1,5 @@
 <script lang="ts">
-	import {
-		getPriorityOptions,
-		type KanbanCard,
-	} from "@svar-ui/svelte-kanban";
+	import { getPriorityOptions, type KanbanCard } from "@svar-ui/svelte-kanban";
 	import { users } from "../data.js";
 	import { resolveLabel, resolveLabels } from "./resolve.js";
 

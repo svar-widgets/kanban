@@ -1,29 +1,38 @@
 <script lang="ts">
+	import type { CardListSlotProps } from "../types.js";
 	import type { Component } from "svelte";
 	import { getContext, onDestroy, setContext } from "svelte";
-	import { delegateClick, hotkeys, locate, locateID, type ILocale } from "@svar-ui/lib-dom";
+	import {
+		delegateClick,
+		hotkeys,
+		locate,
+		locateID,
+		type ILocale,
+	} from "@svar-ui/lib-dom";
 	import { Popup } from "@svar-ui/svelte-core";
 
-	import type {
-		KanbanCard,
-		CardID,
-		ColumnID,
-	} from "@svar-ui/kanban-store";
+	import type { KanbanCard, CardID, ColumnID } from "@svar-ui/kanban-store";
 
 	import Column from "./Column.svelte";
-	import ContextMenu from "./ContextMenu.svelte";
+	import Stack from "./Stack.svelte";
+	const Swimlanes = Column as Component<any>; // pro feature, never rendered: MIT has no lanes
+	const useCardProjection = (_: unknown) => {}; // pro feature
 	import DragGhost from "./DragGhost.svelte";
 	import type { DndState } from "./useDrag.svelte.js";
 	import { cardDrag } from "../directives/drag.js";
 	import type {
 		KanbanContextApi,
 		CardShape,
-		CardMenuShape,
 		RenderConfig,
 		CardCssFn,
 		ColumnCssFn,
+		CardProjection,
 	} from "../types.js";
-	import { KANBAN_API_CONTEXT, SCROLL_CONTAINER_CONTEXT, DND_CONTEXT } from "../context.js";
+	import {
+		KANBAN_API_CONTEXT,
+		SCROLL_CONTAINER_CONTEXT,
+		DND_CONTEXT,
+	} from "../context.js";
 	import { useCardOverlay } from "./useCardOverlay.svelte.js";
 
 	type Props = {
@@ -33,8 +42,11 @@
 		cardContent?: Component<{ card: KanbanCard; cardShape: CardShape }>;
 		tooltip?: any;
 		cardPopup?: any;
+		cardListStart?: Component<CardListSlotProps>;
+		cardListEnd?: Component<CardListSlotProps>;
 		cardCss?: CardCssFn;
 		columnCss?: ColumnCssFn;
+		cardProjection?: CardProjection | null;
 	};
 
 	let {
@@ -44,11 +56,14 @@
 		cardShape,
 		tooltip,
 		cardPopup,
+		cardListStart,
+		cardListEnd,
 		cardCss,
 		columnCss,
+		cardProjection = null,
 	}: Props = $props();
 
-	const columnScroll = $derived(render?.columnScroll ?? true);
+	const stack = $derived(render?.layout === "stack");
 	const fixedColumnWidth = $derived(render?.fixedColumnWidth ?? true);
 	const virtualizeCards = $derived(render?.virtualizeCards ?? false);
 	const virtualizeColumns = $derived(render?.virtualizeColumns ?? false);
@@ -58,6 +73,13 @@
 
 	const store = getContext<KanbanContextApi>(KANBAN_API_CONTEXT);
 	const { viewData } = store.getReactiveState();
+	const hasSwimlanes = $derived($viewData.swimlanes.length > 0);
+	// Lanes and the stack layout override the effective scroll mode without
+	// touching the caller's value, so leaving either restores the preference.
+	const columnScroll = $derived(
+		!stack && !hasSwimlanes && (render?.columnScroll ?? true)
+	);
+
 	const brandmark = store.getBrandmark();
 
 	const _ = getContext<ILocale>("wx-i18n").getGroup("kanban");
@@ -65,6 +87,7 @@
 	const dnd = getContext<DndState>(DND_CONTEXT);
 
 	let root: HTMLElement | undefined = $state();
+	let board: HTMLElement | undefined = $state();
 	let scroll: HTMLElement | undefined = $state();
 	let visibleColumnIds = $state(new Set<ColumnID>());
 	let visibilityFrame = 0;
@@ -89,6 +112,7 @@
 	}
 
 	function updateColumnVisibility() {
+		if (stack) return;
 		if (!virtualizeColumns || !scroll) {
 			setVisibleColumns(new Set());
 			return;
@@ -132,7 +156,7 @@
 	}
 
 	function scheduleColumnVisibility(..._tracked: unknown[]) {
-		if (visibilityFrame) return;
+		if (stack || visibilityFrame) return;
 		visibilityFrame = requestAnimationFrame(() => {
 			visibilityFrame = 0;
 			updateColumnVisibility();
@@ -198,11 +222,10 @@
 	function handleCardKey(e?: KeyboardEvent) {
 		if (readonly) return;
 
-		e?.preventDefault();
 		const active = document.activeElement;
-		const id = active
-			? (locateID(active as Element) as CardID | null)
-			: null;
+		if (!(active instanceof HTMLElement) || !active.matches(".wx-card")) return;
+		e?.preventDefault();
+		const id = active ? (locateID(active as Element) as CardID | null) : null;
 		if (cardPopup && id != null && active) {
 			overlay.handleCardPopup({
 				cardId: id,
@@ -213,26 +236,12 @@
 		selectCard(id);
 	}
 
-	const cardMenuConfig = $derived<CardMenuShape | null>(
-		cardShape?.menu
-			? typeof cardShape.menu === "object"
-				? cardShape.menu
-				: {}
-			: null
-	);
-
-	let cardMenu = $state<ContextMenu>();
-
-	function handleCardMenu(id: CardID | null, ev: Event) {
-		if (readonly || id == null || !cardMenu) return;
-		ev.stopPropagation();
-		cardMenu.show(ev, id);
-	}
-
 	function delegateCardClick(node: HTMLElement) {
 		delegateClick(node, {
 			click: handleCardClick,
-			menu: handleCardMenu,
+			// the ⋯ button must not select the card; the click bubbles on to an
+			// outer CardActionMenu, which owns the menu
+			menu: () => {},
 		});
 	}
 
@@ -260,7 +269,12 @@
 	});
 
 	$effect(() => {
-		if (!scroll || !virtualizeColumns || typeof ResizeObserver === "undefined")
+		if (
+			stack ||
+			!scroll ||
+			!virtualizeColumns ||
+			typeof ResizeObserver === "undefined"
+		)
 			return;
 
 		const observer = new ResizeObserver(() => scheduleColumnVisibility());
@@ -288,6 +302,15 @@
 		};
 	});
 
+	useCardProjection({
+		board: () => board,
+		// The stack layout has no drag, including external drag-in.
+		projection: () => (stack ? null : cardProjection),
+		model: () => $viewData,
+		store,
+		dnd,
+	});
+
 	onDestroy(() => {
 		if (visibilityFrame) cancelAnimationFrame(visibilityFrame);
 	});
@@ -303,8 +326,11 @@
 	<div
 		class="wx-board"
 		class:wx-scroll-board={!columnScroll}
-		class:wx-layout-flex={!fixedColumnWidth}
-		use:cardDrag={{ dnd, store, readonly }}
+		class:wx-layout-flex={!stack && !fixedColumnWidth}
+		class:wx-layout-stack={stack}
+		class:wx-lanes={!stack && hasSwimlanes}
+		bind:this={board}
+		use:cardDrag={{ dnd, store, readonly, disabled: stack }}
 		use:delegateCardClick
 		use:cardHotkeys
 		onmousemove={tooltip ? overlay.handleTooltipMove : undefined}
@@ -315,25 +341,64 @@
 			bind:this={scroll}
 			onscroll={scheduleColumnVisibility}
 		>
-			<div class="wx-content">
-				{#each $viewData.columns as column (column.id)}
-					<Column
-						{column}
-						{readonly}
-						{cardContent}
-						{cardShape}
-						contentVisible={isColumnContentVisible(column.id)}
-						requestVisible={isColumnRequestVisible(column.id)}
-						{virtualizeCards}
-						{estimatedCardHeight}
-						{cardOverscan}
-						{fixedColumnWidth}
-						{registerColumn}
-						{cardCss}
-						{columnCss}
-					/>
-				{/each}
-			</div>
+			{#if stack}
+				<Stack
+					model={$viewData}
+					{scroll}
+					{readonly}
+					{cardContent}
+					{cardShape}
+					{virtualizeCards}
+					{estimatedCardHeight}
+					{cardOverscan}
+					{virtualizeColumns}
+					{cardListStart}
+					{cardListEnd}
+					{cardCss}
+					{columnCss}
+				/>
+			{:else if hasSwimlanes}
+				<Swimlanes
+					model={$viewData}
+					{scroll}
+					{readonly}
+					{cardContent}
+					{cardShape}
+					{virtualizeCards}
+					{estimatedCardHeight}
+					{cardOverscan}
+					{fixedColumnWidth}
+					{registerColumn}
+					{cardListStart}
+					{cardListEnd}
+					{cardCss}
+					{columnCss}
+					contentVisible={isColumnContentVisible}
+					requestVisible={isColumnRequestVisible}
+				/>
+			{:else}
+				<div class="wx-content">
+					{#each $viewData.columns as column (column.id)}
+						<Column
+							{column}
+							{readonly}
+							{cardContent}
+							{cardShape}
+							contentVisible={isColumnContentVisible(column.id)}
+							requestVisible={isColumnRequestVisible(column.id)}
+							{virtualizeCards}
+							{estimatedCardHeight}
+							{cardOverscan}
+							{fixedColumnWidth}
+							{registerColumn}
+							{cardListStart}
+							{cardListEnd}
+							{cardCss}
+							{columnCss}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 	{#if brandmark}
@@ -343,22 +408,12 @@
 	{/if}
 	<DragGhost {root} {cardContent} {cardShape} />
 
-	{#if cardMenuConfig}
-		<ContextMenu
-			options={cardMenuConfig.options}
-			filter={cardMenuConfig.filter}
-			onclick={cardMenuConfig.onclick}
-			bind:this={cardMenu}
-		/>
-	{/if}
-
 	{#if overlay.tooltipState && tooltip}
 		{@const TooltipCmp = tooltip}
 		<div
 			class="wx-tooltip"
-			style="position:fixed;left:{overlay.mousePos.x +
-				12}px;top:{overlay.mousePos.y +
-				16}px;z-index:10000;pointer-events:none"
+			style="position:fixed;left:{overlay.mousePos.x + 12}px;top:{overlay
+				.mousePos.y + 16}px;z-index:10000;pointer-events:none"
 			aria-hidden="true"
 		>
 			<TooltipCmp card={overlay.tooltipState.card} />
@@ -399,8 +454,8 @@
 		min-height: 0;
 	}
 
-	/* the scroll wrapper sits inside the padded board, so the
-	   padding stays at the edges and never scrolls away */
+	/* The scroll wrapper sits inside the padded board, so the padding stays at
+	   the edges and never scrolls away. */
 	.wx-scroll {
 		height: 100%;
 		overflow-x: auto;
@@ -440,7 +495,7 @@
 		overflow: visible;
 	}
 
-	.wx-scroll-board :global(.wx-column.wx-collapsed) {
+	.wx-scroll-board:not(.wx-lanes) :global(.wx-column.wx-collapsed) {
 		position: sticky;
 		top: 0;
 		z-index: 1;
@@ -455,11 +510,22 @@
 		flex: none;
 	}
 
-	.wx-scroll-board :global(.wx-column-header) {
+	.wx-scroll-board:not(.wx-lanes) :global(.wx-column-header) {
 		position: sticky;
 		top: 0;
 		z-index: 1;
 		background: var(--wx-kanban-column-bg);
+	}
+
+	/* single vertical column of groups (layout: "stack"): one scroll axis */
+	.wx-layout-stack .wx-scroll {
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	/* Without drag, a finger starting on a card must scroll the board. */
+	.wx-layout-stack :global(.wx-card) {
+		touch-action: auto;
 	}
 
 	/* flexible columns sharing viewport width (fixedColumnWidth: false) */

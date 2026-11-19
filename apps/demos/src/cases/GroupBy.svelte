@@ -1,19 +1,21 @@
 <script lang="ts">
 	import { Kanban } from "@svar-ui/svelte-kanban";
 	import type { KanbanCard, KanbanInstanceApi } from "@svar-ui/svelte-kanban";
-	import { Field, Select } from "@svar-ui/svelte-core";
-	import { Layout, Cell } from "@svar-ui/svelte-layout";
+	import { DemoPage, ToolbarGroup, SelectBox } from "../ui";
 	import { getGroupByData, users } from "../data.js";
 
 	type GroupBy = "stage" | "priority" | "user";
-	type SelectChange = { value: string | number };
 
-	const { columns: groupColumns, cards: sourceCards, priorities } = getGroupByData();
+	const {
+		columns: groupColumns,
+		cards: sourceCards,
+		priorities,
+	} = getGroupByData();
 
 	const options = [
-		{ id: "stage", label: "By stage" },
-		{ id: "priority", label: "By priority" },
-		{ id: "user", label: "By person" },
+		{ id: "stage", label: "Stage" },
+		{ id: "priority", label: "Priority" },
+		{ id: "user", label: "Person" },
 	];
 
 	const card = {
@@ -22,10 +24,10 @@
 		description: true,
 		users,
 		tags: true,
-		attachments: true,
-		comments: true,
 	};
 
+	// a field name or a get/set pair maps cards to columns; moving a card
+	// between "person" columns writes both fields
 	const userAccessor = {
 		get: (card: KanbanCard) => card.user,
 		set: (card: KanbanCard, value: string | number) => ({
@@ -35,7 +37,7 @@
 		}),
 	};
 
-	let api = $state<KanbanInstanceApi | undefined>();
+	let api = $state<KanbanInstanceApi>();
 	let groupBy = $state<GroupBy>("stage");
 	let cards = $state.raw<KanbanCard[]>(cloneCards(sourceCards));
 
@@ -50,37 +52,18 @@
 		}));
 	}
 
-	function isGroupBy(value: string | number): value is GroupBy {
-		return value === "stage" || value === "priority" || value === "user";
-	}
-
-	function changeGroup({ value }: SelectChange) {
-		if (!isGroupBy(value)) return;
-
+	function changeGroup({ value }: { value: string | number }) {
+		// keep the edits made under the previous grouping
 		cards = cloneCards(api?.getCards() ?? cards);
-		groupBy = value;
+		groupBy = value as GroupBy;
 	}
 </script>
 
-<Layout>
-	<div class="group-toolbar">
-		<Field label="Group cards" position="left">
-			<Select value={groupBy} {options} onchange={changeGroup} />
-		</Field>
-	</div>
-	<Cell>
-		<Kanban bind:this={api} {cards} {columns} {columnAccessor} {card} />
-	</Cell>
-</Layout>
-
-<style>
-	.group-toolbar {
-		display: flex;
-		align-items: center;
-		padding: 10px 10px 0;
-	}
-
-	.group-toolbar :global(.wx-select) {
-		--wx-input-width: 180px;
-	}
-</style>
+<DemoPage>
+	{#snippet toolbar()}
+		<ToolbarGroup label="Group by">
+			<SelectBox value={groupBy} {options} onchange={changeGroup} />
+		</ToolbarGroup>
+	{/snippet}
+	<Kanban bind:this={api} {cards} {columns} {columnAccessor} {card} />
+</DemoPage>

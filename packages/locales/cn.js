@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "管理分组",
+		Columns: "列",
+		Swimlanes: "泳道",
+		"Add column": "添加列",
+		"Add swimlane": "添加泳道",
+		"New column": "新列",
+		"New swimlane": "新泳道",
+		Close: "关闭",
+		Reorder: "重新排序",
+		"Group name": "分组名称",
+		"cards are not shown": "张卡片未显示",
+		"Restore group": "恢复分组",
+
 		Title: "标题",
 		Description: "描述",
 		Priority: "优先级",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "编辑卡片",
 		"Duplicate card": "复制卡片",
 		"Delete card": "删除卡片",
+		"Add card": "添加卡片",
 
 		"Kanban board": "看板",
+		"Expand swimlane": "展开泳道",
+		"Collapse swimlane": "折叠泳道",
 		"Expand column": "展开列",
 		"Collapse column": "折叠列",
 		"Add card to": "添加卡片到",
 		"Card menu": "卡片菜单",
+		"Column menu": "列菜单",
 		Attachments: "附件",
 		Comments: "评论",
 		Card: "卡片",

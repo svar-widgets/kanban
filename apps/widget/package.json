@@ -1,7 +1,21 @@
 {
 	"name": "@svar-ui/svelte-kanban",
-	"version": "2.6.0",
-	"description": "SVAR UI Kanban board widget",
+	"version": "2.7.0",
+	"description": "Customizable Svelte Kanban board component with drag-and-drop, filtering, custom cards, and live updates",
+	"keywords": [
+		"drag-and-drop",
+		"kanban",
+		"kanban-board",
+		"kanban-component",
+		"project-management",
+		"svelte",
+		"svelte-kanban",
+		"svelte-kanban-board",
+		"svelte5",
+		"task-board",
+		"task-management",
+		"typescript"
+	],
 	"homepage": "https://svar.dev/svelte/kanban/",
 	"bugs": {
 		"url": "https://forum.svar.dev"

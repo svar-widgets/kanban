@@ -4,17 +4,109 @@ import type { KanbanCard, StoreActions } from "@svar-ui/kanban-store";
 
 type TMethodsConfig = Pick<
 	StoreActions,
-	"add-card" | "update-card" | "delete-card" | "move-card" | "duplicate-card"
+	| "add-card"
+	| "update-card"
+	| "delete-card"
+	| "move-card"
+	| "duplicate-card"
+	| "add-column"
+	| "update-column"
+	| "move-column"
+	| "delete-column"
+	| "add-swimlane"
+	| "update-swimlane"
+	| "move-swimlane"
+	| "delete-swimlane"
 >;
 
+export const CARDS = 1;
+export const COLUMNS = 2;
+export const SWIMLANES = 3;
+
+// lib-data-provider's public Action type omits `kind`, though the runtime supports it
+type TActionMap = {
+	[P in keyof TMethodsConfig]?: ActionMap<TMethodsConfig>[P] & {
+		kind?: number;
+	};
+};
+
 export default class RestDataProvider extends Rest<TMethodsConfig> {
-	getHandlers(): ActionMap<TMethodsConfig> {
+	getHandlers(): TActionMap {
 		return {
+			"add-column": {
+				ignoreID: true,
+				kind: COLUMNS,
+				handler: async data =>
+					this.send("columns", "POST", {
+						...data.column,
+						before:
+							data.before == null || data.before === data.id
+								? null
+								: await this.getQueue().waitId(data.before),
+					}),
+			},
+			"update-column": {
+				debounce: 500,
+				handler: async data =>
+					this.send(
+						`columns/${encodeURIComponent(data.id)}`,
+						"PUT",
+						data.column
+					),
+			},
+			"move-column": {
+				handler: async data =>
+					this.send(`columns/${encodeURIComponent(data.id)}/move`, "PUT", {
+						before: data.before ?? null,
+					}),
+			},
+			"delete-column": {
+				handler: async data =>
+					this.send(`columns/${encodeURIComponent(data.id)}`, "DELETE"),
+			},
+			"add-swimlane": {
+				ignoreID: true,
+				kind: SWIMLANES,
+				handler: async data =>
+					this.send("swimlanes", "POST", {
+						...data.swimlane,
+						before:
+							data.before == null || data.before === data.id
+								? null
+								: await this.getQueue().waitId(data.before),
+					}),
+			},
+			"update-swimlane": {
+				debounce: 500,
+				handler: async data =>
+					this.send(
+						`swimlanes/${encodeURIComponent(data.id)}`,
+						"PUT",
+						data.swimlane
+					),
+			},
+			"move-swimlane": {
+				handler: async data =>
+					this.send(`swimlanes/${encodeURIComponent(data.id)}/move`, "PUT", {
+						before: data.before ?? null,
+					}),
+			},
+			"delete-swimlane": {
+				handler: async data =>
+					this.send(`swimlanes/${encodeURIComponent(data.id)}`, "DELETE"),
+			},
 			"add-card": {
 				ignoreID: true,
-				handler: async data => {
-					return this.send("cards", "POST", data.card);
-				},
+				kind: CARDS,
+				// the store normalizes `after` into `before` before this runs
+				handler: async data =>
+					this.send("cards", "POST", {
+						...data.card,
+						before:
+							data.before == null || data.before === data.id
+								? null
+								: await this.getQueue().waitId(data.before),
+					}),
 			},
 			"update-card": {
 				debounce: 500,
@@ -31,7 +123,7 @@ export default class RestDataProvider extends Rest<TMethodsConfig> {
 				handler: async data => this.send(`cards/${data.id}`, "DELETE"),
 			},
 			"duplicate-card": {
-				ignoreID: true,
+				kind: CARDS,
 				handler: async data => {
 					return this.send(`cards/${data.id}/duplicate`, "POST", data.card);
 				},

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getContext } from "svelte";
-	import type { ILocale } from "@svar-ui/lib-dom";
+	import { dateToString, type ILocale } from "@svar-ui/lib-dom";
 	import Avatar from "./Avatar.svelte";
+	import CardMenuButton from "./CardMenuButton.svelte";
 	import type { CardID, KanbanCard } from "@svar-ui/kanban-store";
 	import type {
 		CardDeadlineShape,
@@ -19,14 +20,12 @@
 		cardShape: CardShape;
 	};
 
-	type ResolvedCardItem = CardShapeUserItem & {
-		id: CardID;
-		label: string;
-	};
+	type ResolvedCardItem = CardShapeItem & { img?: string };
 
 	let { card, cardShape }: Props = $props();
 
-	const _ = getContext<ILocale>("wx-i18n").getGroup("kanban");
+	const i18n = getContext<ILocale>("wx-i18n");
+	const _ = i18n.getGroup("kanban");
 
 	function countOf(v: any): number {
 		if (typeof v === "number") return v;
@@ -89,30 +88,15 @@
 			: items;
 	}
 
-	function toDate(value: any): Date | null {
-		if (value instanceof Date)
-			return Number.isNaN(value.getTime()) ? null : value;
-		if (typeof value === "string" || typeof value === "number") {
-			const d = new Date(value);
-			return Number.isNaN(d.getTime()) ? null : d;
-		}
-		return null;
-	}
-
-	function pad2(n: number): string {
-		return n < 10 ? "0" + n : String(n);
-	}
-
-	function formatDeadline(value: any, format?: string): string | null {
-		const d = toDate(value);
-		if (!d) return null;
-		if (!format) return d.toLocaleDateString();
-		return format
-			.replace(/YYYY/g, String(d.getFullYear()))
-			.replace(/MM/g, pad2(d.getMonth() + 1))
-			.replace(/DD/g, pad2(d.getDate()))
-			.replace(/HH/g, pad2(d.getHours()))
-			.replace(/mm/g, pad2(d.getMinutes()));
+	// string formats use the wx locale tokens ("%m/%d/%Y"); default is the locale dateFormat
+	function formatDeadline(
+		value: any,
+		format?: string | ((date: Date) => string)
+	): string | null {
+		if (!(value instanceof Date)) return null;
+		if (typeof format === "function") return format(value);
+		const { calendar, formats } = i18n.getRaw() as any;
+		return dateToString(format || formats.dateFormat, calendar)(value);
 	}
 
 	let priorityConfig = $derived(
@@ -131,10 +115,7 @@
 	);
 	let priority = $derived(
 		cardShape.priority
-			? resolveItem(
-					card.priority,
-					priorityConfig?.data ?? getPriorityOptions()
-				)
+			? resolveItem(card.priority, priorityConfig?.data ?? getPriorityOptions())
 			: null
 	);
 	let tags = $derived(
@@ -162,36 +143,22 @@
 </script>
 
 {#if card.cover && cardShape.cover}
-	<div
-		class="wx-cover"
-		style="background-image: url({card.cover});"
-	></div>
+	<div class="wx-cover" style="background-image: url({card.cover});"></div>
 {/if}
-
 
 {#if priority || deadline}
 	<div class="wx-header">
 		{#if priority}
-			<span class="wx-priority {priority.css ?? ''}"
-				>{_(priority.label)}</span
-			>
+			<span class="wx-priority {priority.css ?? ''}">{_(priority.label)}</span>
 		{/if}
 		{#if deadline}
 			<span class="wx-deadline">{deadline}</span>
 		{/if}
 		{#if cardShape.menu}
-			<button
-				type="button"
-				class="wx-menu"
-				data-action="menu"
-				aria-label={_("Card menu")}
-			>
-				<i class="wx-icon wxi-dots-h"></i>
-			</button>
+			<CardMenuButton {card} />
 		{/if}
 	</div>
 {/if}
-
 
 <div class="wx-body">
 	<div class="wx-title-row">
@@ -200,14 +167,7 @@
 				{card.label}
 
 				{#if cardShape.menu && !priority && !deadline}
-					<button
-						type="button"
-						class="wx-menu"
-						data-action="menu"
-						aria-label={_("Card menu")}
-					>
-						<i class="wx-icon wxi-dots-h"></i>
-					</button>
+					<CardMenuButton {card} />
 				{/if}
 			</div>
 		{/if}
@@ -225,10 +185,7 @@
 	{#if card.progress > 0 && cardShape.progress}
 		<div class="wx-progress-row">
 			<div class="wx-progress" aria-label={_("Progress")}>
-				<div
-					class="wx-progress-fill"
-					style="width: {progressPercent}%;"
-				></div>
+				<div class="wx-progress-fill" style="width: {progressPercent}%;"></div>
 			</div>
 			{#if progressConfig?.showLabel}
 				<span class="wx-progress-label">{progressPercent}%</span>
@@ -236,7 +193,6 @@
 		</div>
 	{/if}
 </div>
-
 
 {#if users.length > 0 || (countOf(card.attachments) > 0 && cardShape.attachments) || (countOf(card.comments) > 0 && cardShape.comments)}
 	<div class="wx-footer">
@@ -306,33 +262,8 @@
 		color: var(--wx-color-font-alt);
 	}
 
-	.wx-menu {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: none;
-		border: none;
-		padding: 0;
-		width: 22px;
-		height: 22px;
-		border-radius: var(--wx-icon-border-radius);
-		cursor: pointer;
-		color: var(--wx-color-font-alt);
-		font-size: 16px;
-	}
-
-	.wx-title .wx-menu {
+	.wx-title :global(.wx-menu) {
 		float: right;
-	}
-
-	.wx-menu:hover {
-		background: var(--wx-background-hover);
-		color: var(--wx-color-font);
-	}
-
-	.wx-menu:focus-visible {
-		outline: none;
-		border: 1px solid var(--wx-color-primary);
 	}
 
 	.wx-body {

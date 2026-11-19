@@ -13,7 +13,12 @@
 		extraCss?: string;
 	};
 
-	const { cardContent:CardContent, card, cardShape, extraCss = "" }: Props = $props();
+	const {
+		cardContent: CardContent,
+		card,
+		cardShape,
+		extraCss = "",
+	}: Props = $props();
 
 	const _ = getContext<ILocale>("wx-i18n").getGroup("kanban");
 </script>
@@ -27,12 +32,9 @@
 	aria-label={card.label ?? `${_("Card")} ${card.id}`}
 >
 	{#if CardContent}
-		<CardContent
-			{card}
-			{cardShape}
-		></CardContent>
+		<CardContent {card} {cardShape}></CardContent>
 	{:else}
-		<Card card={card} {cardShape} />
+		<Card {card} {cardShape} />
 	{/if}
 </article>
 

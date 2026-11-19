@@ -6,6 +6,10 @@ export function getMenuOptions() {
 	];
 }
 
+export function getColumnMenuOptions() {
+	return [{ id: "add-card", text: "Add card", icon: "wxi-plus" }];
+}
+
 export type ToolbarButtonConfig = {
 	add?: boolean;
 	undo?: boolean;

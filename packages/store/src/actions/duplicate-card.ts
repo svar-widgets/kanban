@@ -9,7 +9,7 @@ export default function (
 	const source = cards.getById(ev.id);
 
 	if (!source) {
-		return;
+		return false;
 	}
 
 	const duplicate: KanbanCard = {

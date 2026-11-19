@@ -1,12 +1,9 @@
 <script lang="ts">
+	import type { CardListSlotProps } from "../types.js";
 	import type { Component } from "svelte";
 	import { getContext } from "svelte";
-	import type { ILocale } from "@svar-ui/lib-dom";
-	import type {
-		ColumnID,
-		ColumnView,
-		KanbanCard,
-	} from "@svar-ui/kanban-store";
+	import { setID, type ILocale } from "@svar-ui/lib-dom";
+	import type { ColumnID, ColumnView, KanbanCard } from "@svar-ui/kanban-store";
 	import type {
 		KanbanContextApi,
 		CardShape,
@@ -20,6 +17,7 @@
 
 	type Props = {
 		column: ColumnView;
+		headerOnly?: boolean;
 		readonly?: boolean;
 		cardContent?: Component<{ card: KanbanCard; cardShape: CardShape }>;
 		cardShape: CardShape;
@@ -30,12 +28,15 @@
 		cardOverscan: number;
 		fixedColumnWidth: boolean;
 		registerColumn?: (id: ColumnID, element: HTMLElement | null) => void;
+		cardListStart?: Component<CardListSlotProps>;
+		cardListEnd?: Component<CardListSlotProps>;
 		cardCss?: CardCssFn;
 		columnCss?: ColumnCssFn;
 	};
 
 	let {
 		column,
+		headerOnly = false,
 		readonly = false,
 		cardContent,
 		cardShape,
@@ -46,6 +47,8 @@
 		cardOverscan,
 		fixedColumnWidth,
 		registerColumn,
+		cardListStart,
+		cardListEnd,
 		cardCss,
 		columnCss,
 	}: Props = $props();
@@ -55,28 +58,23 @@
 	);
 
 	const store = getContext<KanbanContextApi>(KANBAN_API_CONTEXT);
-	const columnAccessor = $derived(store.getState().columnAccessor);
+	const { columnAccessor } = store.getReactiveState();
 	const _ = getContext<ILocale>("wx-i18n").getGroup("kanban");
 	let root: HTMLElement | undefined = $state();
-	const cardLimitVisible = $derived(
-		typeof column.cardLimit === "number" || column.cardLimit === true
-	);
-	const cardLimitNumber = $derived(
-		typeof column.cardLimit === "number" ? column.cardLimit : null
-	);
 	const addCardVisible = $derived(column.addCard !== false && !readonly);
 
 	function toggleCollapsed() {
 		store.exec("update-column", {
 			id: column.id,
 			column: { collapsed: !column.collapsed },
+			skipProvider: true,
 		});
 	}
 
 	function addCard() {
 		if (!addCardVisible) return;
 
-		const card = createColumnCard({}, columnAccessor, column.id);
+		const card = createColumnCard({}, $columnAccessor, column.id);
 		store.exec("add-card", { card, edit: true });
 	}
 
@@ -94,7 +92,14 @@
 <section
 	class="wx-column {column.css ?? ''} {dynamicColumnCss}"
 	class:wx-collapsed={column.collapsed}
-	class:wx-over-limit={column.overLimit}
+	data-column-id={column.collapsed ? setID(column.id) : undefined}
+	style:box-sizing={column.width !== undefined ? "border-box" : undefined}
+	style:flex={!column.collapsed && column.width !== undefined
+		? `0 0 ${column.width}px`
+		: undefined}
+	style:min-width={!column.collapsed && column.width !== undefined
+		? `${column.width}px`
+		: undefined}
 	bind:this={root}
 >
 	{#if column.collapsed}
@@ -102,35 +107,51 @@
 			type="button"
 			class="wx-expand"
 			onclick={toggleCollapsed}
-			aria-label={_("Expand column")}
+			aria-expanded={false}
+			title={column.label}
+			aria-label={`${_("Expand column")} ${column.label}`}
 		>
 			<i class="wx-icon wxi-angle-right"></i>
 		</button>
-		<div class="wx-body">
-			<h3 class="wx-title">
-				<span>{column.label}</span>
-				{#if cardLimitVisible}
-					<span class="wx-count" class:wx-over={column.overLimit}>
-						{column.cards.length}{#if cardLimitNumber != null}/{cardLimitNumber}{/if}
-					</span>
-				{/if}
-			</h3>
-		</div>
+		{#if !headerOnly}
+			<div class="wx-body">
+				<h3 class="wx-title">
+					<span>{column.label}</span>
+				</h3>
+			</div>
+		{/if}
 	{:else}
-		<header class="wx-column-header">
+		<header class="wx-column-header" data-column-id={setID(column.id)}>
 			<button
 				type="button"
 				class="wx-toggle"
 				onclick={toggleCollapsed}
+				aria-expanded={true}
 				aria-label={_("Collapse column")}
 			>
 				<i class="wx-icon wxi-angle-left"></i>
 			</button>
 			<h3 class="wx-title">{column.label}</h3>
-			{#if cardLimitVisible}
-				<span class="wx-count" class:wx-over={column.overLimit}>
-					{column.cards.length}{#if cardLimitNumber != null}/{cardLimitNumber}{/if}
-				</span>
+			{#if column.summaries.length}
+				<div class="wx-column-summaries">
+					{#each column.summaries as summary (summary.id)}
+						<span
+							class="wx-column-summary {summary.css ?? ''}"
+							title={summary.text}>{summary.text}</span
+						>
+					{/each}
+				</div>
+			{/if}
+			{#if column.menu}
+				<button
+					type="button"
+					class="wx-column-menu"
+					data-column-menu={setID(column.id)}
+					aria-label="{_('Column menu')} {column.label}"
+					aria-haspopup="menu"
+				>
+					<i class="wx-icon wxi-dots-h"></i>
+				</button>
 			{/if}
 			{#if addCardVisible}
 				<button
@@ -143,18 +164,22 @@
 				</button>
 			{/if}
 		</header>
-		<CardList
-			{column}
-			{readonly}
-			{cardContent}
-			{cardShape}
-			{contentVisible}
-			{virtualizeCards}
-			{estimatedCardHeight}
-			{cardOverscan}
-			{fixedColumnWidth}
-			{cardCss}
-		/>
+		{#if !headerOnly}
+			<CardList
+				{column}
+				{readonly}
+				{cardContent}
+				{cardShape}
+				{contentVisible}
+				{virtualizeCards}
+				{estimatedCardHeight}
+				{cardOverscan}
+				{fixedColumnWidth}
+				{cardListStart}
+				{cardListEnd}
+				{cardCss}
+			/>
+		{/if}
 	{/if}
 </section>
 
@@ -182,11 +207,6 @@
 		align-items: center;
 	}
 
-	.wx-over-limit .wx-column-header,
-	.wx-over-limit .wx-body {
-		background: var(--wx-kanban-column-over-limit-bg);
-	}
-
 	.wx-column-header {
 		display: flex;
 		align-items: center;
@@ -204,17 +224,31 @@
 		white-space: nowrap;
 	}
 
-	.wx-count {
+	.wx-column-summaries {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+		max-width: 60%;
+		overflow: hidden;
+	}
+
+	.wx-column-summary {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		padding: 1px 6px;
+		border: 1px solid var(--wx-kanban-border-color);
+		border-radius: var(--wx-border-radius);
+		background: var(--wx-kanban-tag-bg);
 		font-size: var(--wx-font-size-sm);
+		line-height: var(--wx-line-height-sm);
 		color: var(--wx-color-font-alt);
 	}
 
-	.wx-over {
-		color: var(--wx-color-danger);
-		font-weight: var(--wx-font-weight-md);
-	}
-
 	.wx-add,
+	.wx-column-menu,
 	.wx-toggle {
 		display: inline-flex;
 		align-items: center;
@@ -223,6 +257,7 @@
 		border: none;
 		border-radius: var(--wx-icon-border-radius);
 		padding: 0;
+		flex: 0 0 18px;
 		width: 18px;
 		height: 18px;
 		cursor: pointer;
@@ -231,14 +266,15 @@
 	}
 
 	.wx-add:hover,
+	.wx-column-menu:hover,
 	.wx-toggle:hover {
 		background: var(--wx-background-hover);
 	}
 
 	.wx-add:focus,
+	.wx-column-menu:focus,
 	.wx-toggle:focus {
 		outline: none;
-		border: 1px solid var(--wx-color-primary);
 	}
 
 	.wx-expand {
@@ -269,7 +305,6 @@
 		bottom: 0px;
 		display: flex;
 		align-items: center;
-		gap: 8px;
 		max-width: calc(var(--wx-kanban-scroll-height, 100vh) - 96px);
 		transform: rotate(-90deg);
 		transform-origin: left center;
@@ -279,10 +314,5 @@
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-
-	.wx-collapsed .wx-count {
-		flex: 0 0 auto;
-		font-weight: var(--wx-font-weight);
 	}
 </style>

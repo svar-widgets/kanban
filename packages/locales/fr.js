@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "Gérer les groupes",
+		Columns: "Colonnes",
+		Swimlanes: "Couloirs",
+		"Add column": "Ajouter une colonne",
+		"Add swimlane": "Ajouter un couloir",
+		"New column": "Nouvelle colonne",
+		"New swimlane": "Nouveau couloir",
+		Close: "Fermer",
+		Reorder: "Réorganiser",
+		"Group name": "Nom du groupe",
+		"cards are not shown": "cartes ne sont pas affichées",
+		"Restore group": "Restaurer le groupe",
+
 		Title: "Titre",
 		Description: "Description",
 		Priority: "Priorité",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "Modifier la carte",
 		"Duplicate card": "Dupliquer la carte",
 		"Delete card": "Supprimer la carte",
+		"Add card": "Ajouter une carte",
 
 		"Kanban board": "Tableau Kanban",
+		"Expand swimlane": "Développer le couloir",
+		"Collapse swimlane": "Réduire le couloir",
 		"Expand column": "Développer la colonne",
 		"Collapse column": "Réduire la colonne",
 		"Add card to": "Ajouter une carte à",
 		"Card menu": "Menu de la carte",
+		"Column menu": "Menu de la colonne",
 		Attachments: "Pièces jointes",
 		Comments: "Commentaires",
 		Card: "Carte",

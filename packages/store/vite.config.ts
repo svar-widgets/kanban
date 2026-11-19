@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
 		define: getVars(),
 		pack: {
 			dts: {
-				tsgo: true,
+				generator: "tsgo",
 			},
 			exports: true,
 			define: getVars(),

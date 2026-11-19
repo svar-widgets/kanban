@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { getData, getStyledData } from "../data.js";
 	import { Kanban, Toolbar, Editor } from "@svar-ui/svelte-kanban";
-	import { Layout } from "@svar-ui/svelte-layout";
+	import type { KanbanInstanceApi } from "@svar-ui/svelte-kanban";
+	import { DemoPage } from "../ui";
+	import { getData, getStyledData } from "../data.js";
 
 	const { cards } = getStyledData();
 	const { columns } = getData();
-
-	let api = $state<any>();
+	let api = $state<KanbanInstanceApi>();
 </script>
 
-<Layout>
-	<Toolbar {api} sort={true} />
-	<Kanban bind:this={api} {cards} {columns} history={true} />
+<!-- the built-in toolbar: "+" adds a card in the editor, the menu sorts -->
+<DemoPage>
+	<Toolbar {api} add sort />
+	<Kanban bind:this={api} {cards} {columns} />
 	{#if api}<Editor {api} />{/if}
-</Layout>
+</DemoPage>

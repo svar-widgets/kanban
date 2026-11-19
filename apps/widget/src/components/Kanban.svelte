@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { CardListSlotProps } from "../types.js";
 	import type { Component } from "svelte";
 	import { setContext } from "svelte";
 	import { writable } from "svelte/store";
@@ -9,20 +10,25 @@
 		KanbanCard,
 		ColumnConfig,
 		ColumnAccessor,
+		SwimlaneConfig,
+		SwimlaneAccessor,
 		SortCriterion,
 		FilterPredicate,
 	} from "@svar-ui/kanban-store";
 
 	import Layout from "./Layout.svelte";
-	import ExportLayout from "./ExportLayout.svelte";
+
+	const ExportLayout = null; // pro feature
 
 	import type {
 		CardShape,
 		KanbanInstanceApi,
 		KanbanContextApi,
+		KanbanEventHandlers,
 		RenderConfig,
 		CardCssFn,
 		ColumnCssFn,
+		CardProjection,
 	} from "../types.js";
 	import { KANBAN_API_CONTEXT, DND_CONTEXT } from "../context.js";
 	import { DndState } from "./useDrag.svelte.js";
@@ -31,12 +37,15 @@
 	// locales
 	import { en } from "@svar-ui/kanban-locales";
 	import { en as coreEn } from "@svar-ui/core-locales";
-    import { Locale } from "@svar-ui/svelte-core";
+	import { Locale } from "@svar-ui/svelte-core";
 
 	type Props = {
 		cards: KanbanCard[];
-		columns: ColumnConfig[];
+		// omitted: columns are inferred from the cards through columnAccessor
+		columns?: ColumnConfig[];
 		columnAccessor?: ColumnAccessor;
+		swimlanes?: SwimlaneConfig[];
+		swimlaneAccessor?: SwimlaneAccessor;
 		filters?: Map<string, FilterPredicate>;
 		sort?: SortCriterion;
 		card?: CardShape;
@@ -48,14 +57,19 @@
 		init?: (api: KanbanInstanceApi) => void;
 		tooltip?: any;
 		cardPopup?: any;
+		cardListStart?: Component<CardListSlotProps>;
+		cardListEnd?: Component<CardListSlotProps>;
 		cardCss?: CardCssFn;
 		columnCss?: ColumnCssFn;
-	};
+		cardProjection?: CardProjection | null;
+	} & KanbanEventHandlers;
 
 	let {
 		cards,
 		columns,
 		columnAccessor = "column",
+		swimlanes,
+		swimlaneAccessor = "swimlane",
 		filters = new Map(),
 		sort = null,
 		card = getCardShape(),
@@ -67,8 +81,11 @@
 		init,
 		tooltip,
 		cardPopup,
+		cardListStart,
+		cardListEnd,
 		cardCss,
 		columnCss,
+		cardProjection = null,
 		...restProps
 	}: Props = $props();
 
@@ -87,17 +104,14 @@
 	});
 	firstInRoute.setNext(lastInRoute);
 
-	
-
-	export const
-		getState = store.getState.bind(store),
+	export const getState = store.getState.bind(store),
 		getReactiveState = store.getReactive.bind(store),
 		getStores = () => ({ data: store }),
 		getCards = store.getCards.bind(store),
 		exec = store.in.exec.bind(store.in),
 		on = store.in.on.bind(store.in),
 		detach = store.in.detach.bind(store.in),
-		setNext = store.in.setNext.bind(store.in),
+		setNext = (ev: any) => (lastInRoute = lastInRoute.setNext(ev)),
 		intercept = store.in.intercept.bind(store.in);
 
 	const api: KanbanInstanceApi = {
@@ -112,15 +126,24 @@
 		intercept,
 	};
 
-
 	setContext(KANBAN_API_CONTEXT, {
-		getReactiveState, getState, exec,
+		getReactiveState,
+		getState,
+		exec,
 		getBrandmark: store.getBrandmark.bind(store),
 	} as KanbanContextApi);
 	setContext(DND_CONTEXT, new DndState());
 
-
-	const input = () => ({ cards, columns, columnAccessor, filters, sort, dynamicData });
+	const input = () => ({
+		cards,
+		columns,
+		columnAccessor,
+		swimlanes,
+		swimlaneAccessor,
+		filters,
+		sort,
+		dynamicData,
+	});
 
 	store.init({ ...input(), renderMode: "" });
 	// svelte-ignore state_referenced_locally
@@ -129,18 +152,18 @@
 	let firstEffect = true;
 	$effect(() => {
 		const data = input();
-		if (firstEffect) { firstEffect = false; return; }
+		if (firstEffect) {
+			firstEffect = false;
+			return;
+		}
 		store.init(data);
 	});
 
-	$effect(() => {
-		store.meta["export-data"] = { card, cardContent, cardCss, columnCss };
-	});
 
 	const renderMode = store.getReactive().renderMode;
 </script>
 
-<Locale words={{...coreEn, ...en}} optional={true}>
+<Locale words={{ ...coreEn, ...en }} optional={true}>
 	<Layout
 		cardShape={card}
 		{readonly}
@@ -148,15 +171,20 @@
 		{cardContent}
 		{tooltip}
 		{cardPopup}
+		{cardListStart}
+		{cardListEnd}
 		{cardCss}
 		{columnCss}
+		{cardProjection}
 	/>
-	{#if $renderMode === "export"}
-		<ExportLayout
-			cardShape={card}
-			{cardContent}
-			{cardCss}
-			{columnCss}
-		/>
+	{#if ExportLayout && $renderMode === "export"}
+		<ExportLayout cardShape={card} {cardContent} {cardCss} {columnCss} />
 	{/if}
 </Locale>
+
+<style>
+	/* TEMPORARY (remove when fixed in @svar-ui/svelte-menu). */
+	:global([data-menu-ignore]) {
+		display: contents;
+	}
+</style>

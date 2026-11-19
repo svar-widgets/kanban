@@ -1,5 +1,5 @@
 <div align="center">
-	
+
 # SVAR Svelte Kanban
 
 </div>
@@ -18,7 +18,7 @@
 
 </div>
 
-[SVAR Svelte Kanban](https://svar.dev/svelte/kanban/) is a customizable, interactive Kanban board component for Svelte and SvelteKit apps. It supports drag-and-drop, card editing, filtering, sorting, flexible layouts, and rich customization options. Use it to add clear visualization of tasks and project workflows. 
+[SVAR Svelte Kanban](https://svar.dev/svelte/kanban/) is a customizable, interactive Kanban board component for Svelte and SvelteKit apps. It supports drag-and-drop, card editing, filtering, sorting, flexible layouts, and rich customization options. Use it to add clear visualization of tasks and project workflows.
 
 The kanban component comes with full TypeScript support, rich API, and easy CSS styling. The PRO Edition offers extra features for enterprise projects (see below).
 
@@ -28,23 +28,31 @@ The kanban component comes with full TypeScript support, rich API, and easy CSS 
 
 ### ✨ Key Features
 
-- Drag-and-drop cards between columns and rows
+- Drag-and-drop cards between and within columns
 - Built-in card editor
-- Context menu and toolbar
-- Card filtering, sorting, grouping
-- REST data provider for backend integration
+- Card and column menus
+- Toolbar
+- Column summaries
+- Card filtering, sorting, and grouping
 - Custom card templates
 - Localization
 - Light and dark themes
+- Stack layout for small screens
+- REST data provider for backend integration
+- Live multi-user updates
 - Full TypeScript support
 
 ### 🚀 PRO Edition
 
 SVAR Svelte Kanban is available in open-source and [PRO Editions](https://svar.dev/svelte/kanban/#pro). The PRO Edition offers extra features for enterprise projects:
 
-- Export to PDF/PNG/Excel
+- Swimlanes
+- Group manager for columns and swimlanes
+- Card grid – fixed-size tiles inside a column
+- Drag-in from external lists
 - Dynamic data loading
 - Undo/redo
+- Export to PDF, PNG, Excel
 
 Visit the [pricing page](https://svar.dev/svelte/kanban/pricing/) for full feature comparison, licensing details, and **free trial**.
 
@@ -93,7 +101,7 @@ vp test
 
 ### ⭐ Show Your Support
 
-If SVAR Svelte Kanban helps your project, [give us a star](https://github.com/svar-widgets/kanban/) to support us! 
+If SVAR Svelte Kanban helps your project, [give us a star](https://github.com/svar-widgets/kanban/) to support us!
 
 ### :speech_balloon: Need Help?
 

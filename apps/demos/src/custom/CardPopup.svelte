@@ -1,8 +1,5 @@
 <script lang="ts">
-	import {
-		getPriorityOptions,
-		type KanbanCard,
-	} from "@svar-ui/svelte-kanban";
+	import { getPriorityOptions, type KanbanCard } from "@svar-ui/svelte-kanban";
 	import { users } from "../data.js";
 	import { resolveLabel, resolveLabels } from "./resolve.js";
 
@@ -28,11 +25,8 @@
 <div class="card-popup">
 	<div class="popup-header">
 		<div class="popup-title">{card.label ?? `Card ${card.id}`}</div>
-		<button
-			type="button"
-			class="popup-close"
-			aria-label="Close"
-			onclick={close}>×</button
+		<button type="button" class="popup-close" aria-label="Close" onclick={close}
+			>×</button
 		>
 	</div>
 	<div class="popup-body">

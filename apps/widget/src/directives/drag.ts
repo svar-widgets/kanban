@@ -4,6 +4,12 @@ import type {
 	ColumnView,
 	KanbanCard,
 } from "@svar-ui/kanban-store";
+import {
+	cellDestinations,
+	dropCell,
+	resolveDropTarget,
+	sameTarget,
+} from "../layout/target.js";
 import { getID } from "@svar-ui/lib-dom";
 
 import type { KanbanContextApi } from "../types.js";
@@ -13,6 +19,8 @@ export type CardDragParams = {
 	dnd: DndState | undefined;
 	store: KanbanContextApi;
 	readonly?: boolean;
+	/** No drag starts and an active drag is cancelled, e.g. in the stack layout. */
+	disabled?: boolean;
 };
 
 type Resolved = {
@@ -20,7 +28,9 @@ type Resolved = {
 	store: KanbanContextApi;
 	id: CardID;
 	column: ColumnID;
+	swimlane?: ColumnID;
 	cardEl: HTMLElement;
+	root: HTMLElement;
 };
 
 const DRAG_THRESHOLD_PX = 4;
@@ -32,10 +42,77 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 	let pending = false;
 	let started = false;
 	let active: Resolved | null = null;
+	let scrollFrame = 0;
+	let hovered: { cell: HTMLElement; key: string } | null = null;
+
+	// Retarget a still pointer only when the hovered cell itself scrolled, moved or
+	// rewrapped. A cell that arrives under the pointer because a placeholder resized
+	// a lane waits for the next move; retargeting it would bounce the placeholder
+	// between lanes every frame.
+	const inert = () => !!(params.readonly || params.disabled);
+
+	function refreshStationary(
+		a: Resolved,
+		force: boolean,
+		hit = document.elementFromPoint(a.dnd.pointer.x, a.dnd.pointer.y)
+	) {
+		const cell = hit?.closest<HTMLElement>("[data-kanban-column-cards]");
+		const key = cell ? cellKey(cell) : "";
+		const changed =
+			!!cell &&
+			hovered !== null &&
+			hovered.cell === cell &&
+			hovered.key !== key;
+		hovered = cell ? { cell, key } : null;
+		if (force || changed)
+			updateTarget(a.dnd.pointer.x, a.dnd.pointer.y, a, hit);
+	}
+
+	function autoScroll() {
+		if (!started || !active) return;
+		const { x, y } = active.dnd.pointer;
+		let scrolled = false;
+		const scroll = node.querySelector<HTMLElement>(".wx-scroll");
+		if (scroll) {
+			const rect = scroll.getBoundingClientRect();
+			const inset =
+				node.querySelector<HTMLElement>(".wx-lane-columns")?.offsetHeight ?? 0;
+			const speed = (position: number, start: number, end: number) =>
+				position < start + 36 ? -12 : position > end - 36 ? 12 : 0;
+			if (
+				x >= rect.left &&
+				x <= rect.right &&
+				y >= rect.top &&
+				y <= rect.bottom
+			) {
+				const previousLeft = scroll.scrollLeft;
+				const previousTop = scroll.scrollTop;
+				const speedX = speed(x, rect.left, rect.right);
+				const speedY = node.classList.contains("wx-scroll-board")
+					? speed(y, rect.top + inset, rect.bottom)
+					: 0;
+
+				if (speedX) scroll.scrollLeft += speedX;
+				if (speedY) scroll.scrollTop += speedY;
+				scrolled =
+					scroll.scrollLeft !== previousLeft ||
+					scroll.scrollTop !== previousTop;
+			}
+		}
+		const hit = document.elementFromPoint(x, y);
+		const cell = hit?.closest<HTMLElement>("[data-kanban-column-cards]");
+		if (cell && !node.classList.contains("wx-scroll-board")) {
+			const rect = cell.getBoundingClientRect();
+			if (y < rect.top + 36) cell.scrollTop -= 12;
+			else if (y > rect.bottom - 36) cell.scrollTop += 12;
+		}
+		// Pointer moves retarget in onPointerMove; between moves only on changes.
+		refreshStationary(active, scrolled, hit);
+		scrollFrame = requestAnimationFrame(autoScroll);
+	}
 
 	function onPointerDown(e: PointerEvent) {
-		if (e.button !== 0 || params.readonly || !params.dnd || !params.store)
-			return;
+		if (e.button !== 0 || inert() || !params.dnd || !params.store) return;
 
 		const target = e.target as HTMLElement | null;
 		const cardEl = target
@@ -65,7 +142,10 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 			store: params.store,
 			id: cardRec.id,
 			column: column.id,
+			swimlane:
+				(getID(columnEl, "data-kanban-swimlane") as ColumnID) ?? undefined,
 			cardEl,
+			root: node,
 		};
 
 		pending = true;
@@ -79,7 +159,7 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 
 	function onPointerMove(e: PointerEvent) {
 		if (!pending || !active) return;
-		if (params.readonly) {
+		if (inert()) {
 			cancelActiveDrag();
 			return;
 		}
@@ -97,6 +177,8 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 	function onPointerUp() {
 		teardownListeners();
 		if (started && active) {
+			// Catch changes made after the last frame, e.g. a rewrap just before release.
+			refreshStationary(active, false);
 			commitDrop(active);
 			active.dnd.reset();
 			document.body.style.userSelect = "";
@@ -120,13 +202,16 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 		a.dnd.pointer = { x: e.clientX, y: e.clientY };
 		a.dnd.cardId = a.id;
 		a.dnd.sourceColumn = a.column;
-		a.dnd.target = { column: a.column, beforeId: null };
+		a.dnd.target = { column: a.column, swimlane: a.swimlane, before: null };
 		a.dnd.active = true;
 		document.body.style.userSelect = "none";
 		started = true;
+		hovered = null;
+		scrollFrame = requestAnimationFrame(autoScroll);
 	}
 
 	function teardownListeners() {
+		cancelAnimationFrame(scrollFrame);
 		window.removeEventListener("pointermove", onPointerMove);
 		window.removeEventListener("pointerup", onPointerUp);
 		window.removeEventListener("keydown", onKeyDown);
@@ -148,7 +233,7 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 	return {
 		update(next: CardDragParams) {
 			params = next;
-			if (params.readonly && (pending || started)) cancelActiveDrag();
+			if (inert() && (pending || started)) cancelActiveDrag();
 		},
 		destroy() {
 			node.removeEventListener("pointerdown", onPointerDown);
@@ -157,75 +242,62 @@ export function cardDrag(node: HTMLElement, initial: CardDragParams) {
 	};
 }
 
-function updateTarget(x: number, y: number, a: Resolved) {
-	const el = document.elementFromPoint(x, y);
-	const columnEl = el
-		? (el.closest("[data-kanban-column-cards]") as HTMLElement | null)
-		: null;
-
-	if (!columnEl) {
-		// keep the last known target so the placeholder stays visible when the
-		// pointer briefly leaves a column
-		return;
-	}
-
-	const columnId = getID(
-		columnEl,
-		"data-kanban-column-cards"
-	) as ColumnID | null;
-	if (columnId == null) return;
-
-	const viewData = a.store.getState().viewData;
-	const column = viewData.columns.find((c: ColumnView) => c.id === columnId);
-	if (!column) return;
-
-	const cardEls = Array.from(
-		columnEl.querySelectorAll<HTMLElement>("[data-kanban-card-id]")
-	).filter(n => getID(n, "data-kanban-card-id") !== a.id);
-
-	let beforeId: CardID | null = null;
-	for (const cardEl of cardEls) {
-		const rect = cardEl.getBoundingClientRect();
-		if (y < rect.top + rect.height / 2) {
-			beforeId = resolveRenderedCardId(
-				column,
-				getID(cardEl, "data-kanban-card-id") as CardID | null
-			);
-			break;
-		}
-	}
-
-	if (beforeId == null) {
-		beforeId = resolveRenderedCardId(
-			column,
-			getID(columnEl, "data-kanban-after-rendered-before-id") as CardID | null
-		);
-	}
-
-	const next = { column: column.id, beforeId };
-	const prev = a.dnd.target;
-	if (!prev || prev.column !== next.column || prev.beforeId !== next.beforeId) {
-		a.dnd.target = next;
-	}
+/** Hovered-cell state that invalidates a target under a still pointer. */
+function cellKey(cell: HTMLElement): string {
+	const rect = cell.getBoundingClientRect();
+	const layout = cellDestinations.get(cell)?.layout() ?? "";
+	return `${layout}|${rect.top}|${rect.left}|${cell.scrollTop}|${cell.scrollLeft}`;
 }
 
-function resolveRenderedCardId(
-	column: ColumnView,
-	id: CardID | null
-): CardID | null {
-	if (id == null) return null;
-	return column.cards.find(card => card.id === id)?.id ?? null;
+function updateTarget(
+	x: number,
+	y: number,
+	a: Resolved,
+	hit = document.elementFromPoint(x, y)
+) {
+	const model = a.store.getState().viewData;
+	const next = resolveDropTarget(a.root, model, x, y, a.id, hit);
+	const prev = a.dnd.target;
+	// Interaction policy: a stack target survives gutters and headers, while
+	// invalid cells and stale flow boundaries are dropped.
+	if (
+		!next &&
+		!dropCell(a.root, hit) &&
+		!model.columns.some(
+			column => column.id === prev?.column && column.cardWidth !== undefined
+		)
+	)
+		return;
+	if (!sameTarget(prev, next)) a.dnd.target = next;
 }
 
 function commitDrop(a: Resolved) {
 	const target = a.dnd.target;
 	if (!target) return;
 
-	const payload: { id: CardID; column?: ColumnID; before?: CardID | null } = {
+	const model = a.store.getState().viewData;
+	if (
+		model.columns.find(column => column.id === target.column)?.collapsed !==
+		false
+	)
+		return;
+	if (
+		model.swimlanes.length > 0 &&
+		model.swimlanes.find(lane => lane.id === target.swimlane)?.collapsed !==
+			false
+	)
+		return;
+	const payload: {
+		id: CardID;
+		column?: ColumnID;
+		swimlane?: ColumnID;
+		before?: CardID | null;
+	} = {
 		id: a.id,
 		column: target.column,
+		swimlane: target.swimlane,
 	};
-	if (target.beforeId != null) payload.before = target.beforeId;
+	if (target.before != null) payload.before = target.before;
 
 	void a.store.exec("move-card", payload);
 }

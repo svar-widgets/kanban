@@ -1,6 +1,6 @@
 {
 	"name": "@svar-ui/kanban-store",
-	"version": "2.6.0",
+	"version": "2.7.0",
 	"description": "State and models for SVAR Kanban",
 	"homepage": "https://svar.dev",
 	"license": "MIT",

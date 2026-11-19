@@ -1,10 +1,5 @@
-import type {
-	ColumnAccessor,
-	ColumnID,
-	IKanbanStore,
-	KanbanCard,
-	StoreActions,
-} from "../types";
+import { writeMembership } from "../accessor";
+import type { IKanbanStore, StoreActions } from "../types";
 
 export default function (
 	store: IKanbanStore,
@@ -12,13 +7,13 @@ export default function (
 ) {
 	const { cards, columns, columnAccessor, columnData } = store.getState();
 
-	if (ev.id) {
+	if (ev.id !== undefined) {
 		if (!columns.some(column => column.id === ev.id)) {
 			return;
 		}
 
 		ev.cards.forEach(card => {
-			cards.upsert(writeColumn(card, columnAccessor, ev.id!));
+			cards.upsert(writeMembership(card, columnAccessor, ev.id!));
 		});
 
 		const next = new Map(columnData);
@@ -31,14 +26,4 @@ export default function (
 
 		store.setState({ cards });
 	}
-}
-
-function writeColumn(
-	card: KanbanCard,
-	accessor: ColumnAccessor,
-	column: ColumnID
-): KanbanCard {
-	return typeof accessor === "string"
-		? { ...card, [accessor]: column }
-		: accessor.set(card, column);
 }

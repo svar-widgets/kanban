@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "Gestisci gruppi",
+		Columns: "Colonne",
+		Swimlanes: "Corsie",
+		"Add column": "Aggiungi colonna",
+		"Add swimlane": "Aggiungi corsia",
+		"New column": "Nuova colonna",
+		"New swimlane": "Nuova corsia",
+		Close: "Chiudi",
+		Reorder: "Riordina",
+		"Group name": "Nome del gruppo",
+		"cards are not shown": "schede non visualizzate",
+		"Restore group": "Ripristina gruppo",
+
 		Title: "Titolo",
 		Description: "Descrizione",
 		Priority: "Priorità",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "Modifica scheda",
 		"Duplicate card": "Duplica scheda",
 		"Delete card": "Elimina scheda",
+		"Add card": "Aggiungi scheda",
 
 		"Kanban board": "Bacheca Kanban",
+		"Expand swimlane": "Espandi corsia",
+		"Collapse swimlane": "Comprimi corsia",
 		"Expand column": "Espandi colonna",
 		"Collapse column": "Comprimi colonna",
 		"Add card to": "Aggiungi scheda a",
 		"Card menu": "Menu scheda",
+		"Column menu": "Menu colonna",
 		Attachments: "Allegati",
 		Comments: "Commenti",
 		Card: "Scheda",

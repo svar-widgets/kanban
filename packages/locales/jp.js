@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "グループ管理",
+		Columns: "列",
+		Swimlanes: "スイムレーン",
+		"Add column": "列を追加",
+		"Add swimlane": "スイムレーンを追加",
+		"New column": "新しい列",
+		"New swimlane": "新しいスイムレーン",
+		Close: "閉じる",
+		Reorder: "並べ替え",
+		"Group name": "グループ名",
+		"cards are not shown": "枚のカードが非表示です",
+		"Restore group": "グループを復元",
+
 		Title: "タイトル",
 		Description: "説明",
 		Priority: "優先度",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "カードを編集",
 		"Duplicate card": "カードを複製",
 		"Delete card": "カードを削除",
+		"Add card": "カードを追加",
 
 		"Kanban board": "カンバンボード",
+		"Expand swimlane": "スイムレーンを展開",
+		"Collapse swimlane": "スイムレーンを折りたたむ",
 		"Expand column": "列を展開",
 		"Collapse column": "列を折りたたむ",
 		"Add card to": "カードを追加:",
 		"Card menu": "カードメニュー",
+		"Column menu": "列メニュー",
 		Attachments: "添付ファイル",
 		Comments: "コメント",
 		Card: "カード",

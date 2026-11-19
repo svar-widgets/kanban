@@ -1,87 +1,100 @@
 <script lang="ts">
-import type { KanbanCard } from "@svar-ui/svelte-kanban";
+	import { CardMenuButton, type KanbanCard } from "@svar-ui/svelte-kanban";
 
-const { card } = $props<{ card: KanbanCard }>();
+	const { card } = $props<{ card: KanbanCard }>();
 
-function countOf(value: unknown): number {
-    if (typeof value === "number") return value;
-    if (Array.isArray(value)) return value.length;
-    return 0;
-}
+	function countOf(value: unknown): number {
+		if (typeof value === "number") return value;
+		if (Array.isArray(value)) return value.length;
+		return 0;
+	}
 
-function progressOf(card: KanbanCard): number {
-    return Math.round(Math.max(0, Math.min(1, card.progress ?? 0)) * 100);
-}
+	function progressOf(card: KanbanCard): number {
+		return Math.round(Math.max(0, Math.min(1, card.progress ?? 0)) * 100);
+	}
 
-function formatDeadline(value: unknown): string {
-    if (
-        !(value instanceof Date) &&
-        typeof value !== "string" &&
-        typeof value !== "number"
-    ) {
-        return "";
-    }
+	function formatDeadline(value: unknown): string {
+		if (
+			!(value instanceof Date) &&
+			typeof value !== "string" &&
+			typeof value !== "number"
+		) {
+			return "";
+		}
 
-    const deadline = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(deadline.getTime())) return "";
+		const deadline = value instanceof Date ? value : new Date(value);
+		if (Number.isNaN(deadline.getTime())) return "";
 
-    return deadline.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-    });
-}
+		return deadline.toLocaleDateString(undefined, {
+			month: "short",
+			day: "numeric",
+		});
+	}
 
-const progress = $derived(progressOf(card));
-const deadline = $derived(formatDeadline(card.deadline));
-const userCount = $derived(countOf(card.users));
-const attachmentCount = $derived(countOf(card.attachments));
-const commentCount = $derived(countOf(card.comments));
-
-
+	const progress = $derived(progressOf(card));
+	const deadline = $derived(formatDeadline(card.deadline));
+	const userCount = $derived(countOf(card.users));
+	const attachmentCount = $derived(countOf(card.attachments));
+	const commentCount = $derived(countOf(card.comments));
 </script>
 
 <div class="custom-card">
-    <div class="custom-card-top">
-        {#if card.priority}
-            <span class="custom-card-priority">P{card.priority}</span>
-        {/if}
-        {#if deadline}
-            <span class="custom-card-date">{deadline}</span>
-        {/if}
-    </div>
+	<div class="custom-card-top">
+		{#if card.priority}
+			<span class="custom-card-priority">P{card.priority}</span>
+		{/if}
+		{#if deadline}
+			<span class="custom-card-date">{deadline}</span>
+		{/if}
+		<!-- opens the CardActionMenu that wraps <Kanban> -->
+		<CardMenuButton {card} css="custom-card-menu" />
+	</div>
 
-    <strong class="custom-card-title">{card.label ?? `Card ${card.id}`}</strong>
+	<strong class="custom-card-title">{card.label ?? `Card ${card.id}`}</strong>
 
-    {#if card.description}
-        <p class="custom-card-description">{card.description}</p>
-    {/if}
+	{#if card.description}
+		<p class="custom-card-description">{card.description}</p>
+	{/if}
 
-    <div class="custom-card-progress-row">
-        <div class="custom-card-progress" aria-label="progress">
-            <span style:width={progress + "%"}></span>
-        </div>
-        <span class="custom-card-progress-value">{progress}%</span>
-    </div>
+	<div class="custom-card-progress-row">
+		<div class="custom-card-progress" aria-label="progress">
+			<span style:width={progress + "%"}></span>
+		</div>
+		<span class="custom-card-progress-value">{progress}%</span>
+	</div>
 
-    <div class="custom-card-meta">
-        {#if userCount > 0}
-            <span>{userCount} users</span>
-        {/if}
-        {#if attachmentCount > 0}
-            <span>{attachmentCount} files</span>
-        {/if}
-        {#if commentCount > 0}
-            <span>{commentCount} comments</span>
-        {/if}
-    </div>
+	<div class="custom-card-meta">
+		{#if userCount > 0}
+			<span>{userCount} users</span>
+		{/if}
+		{#if attachmentCount > 0}
+			<span>{attachmentCount} files</span>
+		{/if}
+		{#if commentCount > 0}
+			<span>{commentCount} comments</span>
+		{/if}
+	</div>
 </div>
 
 <style>
-    .custom-card {
+	.custom-card {
+		--custom-card-badge-bg: #e7f2ff;
+		--custom-card-badge-color: #075b9c;
+		--custom-card-track: #e2e7ee;
+		--custom-card-bar: #2f8fed;
+		--custom-card-chip-bg: #f1f3f6;
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
 		min-width: 0;
+	}
+
+	:global(.wx-willow-dark-theme) .custom-card {
+		--custom-card-badge-bg: #1f3a57;
+		--custom-card-badge-color: #9ccbff;
+		--custom-card-track: #3a3f4b;
+		--custom-card-bar: #4aa3ff;
+		--custom-card-chip-bg: #343843;
 	}
 
 	.custom-card-top,
@@ -101,8 +114,8 @@ const commentCount = $derived(countOf(card.comments));
 	.custom-card-priority {
 		border-radius: 4px;
 		padding: 1px 6px;
-		background: #e7f2ff;
-		color: #075b9c;
+		background: var(--custom-card-badge-bg);
+		color: var(--custom-card-badge-color);
 		font-weight: 600;
 	}
 
@@ -111,6 +124,10 @@ const commentCount = $derived(countOf(card.comments));
 	.custom-card-progress-value,
 	.custom-card-meta {
 		color: var(--wx-color-font-alt, #666a76);
+	}
+
+	.custom-card-top :global(.custom-card-menu) {
+		margin-left: auto;
 	}
 
 	.custom-card-date {
@@ -144,14 +161,14 @@ const commentCount = $derived(countOf(card.comments));
 		height: 6px;
 		border-radius: 3px;
 		overflow: hidden;
-		background: #e2e7ee;
+		background: var(--custom-card-track);
 	}
 
 	.custom-card-progress span {
 		display: block;
 		height: 100%;
 		border-radius: inherit;
-		background: #2f8fed;
+		background: var(--custom-card-bar);
 	}
 
 	.custom-card-progress-value {
@@ -168,6 +185,6 @@ const commentCount = $derived(countOf(card.comments));
 	.custom-card-meta span {
 		border-radius: 4px;
 		padding: 1px 6px;
-		background: #f1f3f6;
+		background: var(--custom-card-chip-bg);
 	}
 </style>

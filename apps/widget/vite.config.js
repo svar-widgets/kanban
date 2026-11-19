@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
 	if (mode === "export") {
 		build = {
 			lib: {
-				entry: "src/export.ts",
+				entry: "src/pro_export.ts",
 				formats: ["es"],
 				fileName: "kanban",
 			},

@@ -24,6 +24,8 @@ declare const window: any;
 export class KanbanStore extends Store<IData> {
 	public in: EventBus<StoreActions, keyof StoreActions>;
 	public meta: Record<string, any>;
+	public _autoColumns = false;
+	public _autoSwimlanes = false;
 	private _router: DataRouter<State, Partial<State>, StoreActions>;
 
 
@@ -33,7 +35,9 @@ export class KanbanStore extends Store<IData> {
 		this.meta = {};
 
 		this._router = new DataRouter(super.setState.bind(this), reactive(this), {
-			columns: v => [...v],
+			columns: v => [...(v ?? [])],
+			swimlanes: (v: StateInput["swimlanes"]) =>
+				v?.map(lane => ({ ...lane })) ?? [],
 			cards: v => new CardsStore(v),
 		});
 
@@ -42,6 +46,8 @@ export class KanbanStore extends Store<IData> {
 			cards: new CardsStore([]),
 			columns: [],
 			columnAccessor: "column",
+			swimlanes: [],
+			swimlaneAccessor: "swimlane",
 			filters: new Map(),
 			sort: null,
 			editorData: null,
@@ -58,6 +64,8 @@ export class KanbanStore extends Store<IData> {
 	}
 
 	init(state: StateInput) {
+		this._autoColumns = state.columns === undefined;
+		this._autoSwimlanes = state.swimlanes === undefined;
 		this._router.init(state as any);
 	}
 
@@ -65,20 +73,8 @@ export class KanbanStore extends Store<IData> {
 		return this.getState().cards.getCards();
 	}
 
-	pushUndo<A extends HistoryActionName>(action: A, ev: StoreActions[A]) {
-		this._history.pushUndo(action, ev);
-	}
-
-	undo() {
-		this._history.undo();
-	}
-
-	redo() {
-		this._history.redo();
-	}
-
 	resetHistory() {
-		this._history.reset();
+		// do nothing
 	}
 
 	getBrandmark(): Brandmark | null {

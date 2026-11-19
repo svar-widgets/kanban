@@ -1,3 +1,6 @@
+import addColumn from "./add-column";
+import deleteColumn from "./delete-column";
+import moveColumn from "./move-column";
 import type { EventBus } from "@svar-ui/lib-state";
 import type { StoreActions, IKanbanStore } from "../types";
 
@@ -20,6 +23,9 @@ export function init(
 	store: IKanbanStore
 ) {
 
+	inBus.on("add-column", (params: any) => addColumn(store, params));
+	inBus.on("delete-column", (params: any) => deleteColumn(store, params));
+	inBus.on("move-column", (params: any) => moveColumn(store, params));
 	inBus.on("add-card", (params: any) => addCard(store, params));
 	inBus.on("update-card", (params: any) => updateCard(store, params));
 	inBus.on("move-card", (params: any) => moveCard(store, params));

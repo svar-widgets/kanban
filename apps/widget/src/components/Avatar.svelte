@@ -18,9 +18,7 @@
 
 	let { value, size = 24, limit }: Props = $props();
 
-	const users = $derived(
-		Array.isArray(value) ? value : value ? [value] : []
-	);
+	const users = $derived(Array.isArray(value) ? value : value ? [value] : []);
 	const safeLimit = $derived(
 		typeof limit === "number" && Number.isFinite(limit)
 			? Math.max(0, Math.floor(limit))
@@ -36,7 +34,7 @@
 	);
 
 	function getLabel(user: AvatarUser): string {
-		return user.label ?? user.name ?? "" as string;
+		return user.label ?? user.name ?? ("" as string);
 	}
 
 	function getInitials(user: AvatarUser): string {

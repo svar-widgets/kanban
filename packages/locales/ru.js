@@ -1,5 +1,19 @@
 export default {
 	kanban: {
+		// group manager
+		"Manage groups": "Управление группами",
+		Columns: "Колонки",
+		Swimlanes: "Дорожки",
+		"Add column": "Добавить колонку",
+		"Add swimlane": "Добавить дорожку",
+		"New column": "Новая колонка",
+		"New swimlane": "Новая дорожка",
+		Close: "Закрыть",
+		Reorder: "Изменить порядок",
+		"Group name": "Название группы",
+		"cards are not shown": "карточек не показано",
+		"Restore group": "Восстановить группу",
+
 		Title: "Заголовок",
 		Description: "Описание",
 		Priority: "Приоритет",
@@ -24,12 +38,16 @@ export default {
 		"Edit card": "Редактировать карточку",
 		"Duplicate card": "Дублировать карточку",
 		"Delete card": "Удалить карточку",
+		"Add card": "Добавить карточку",
 
 		"Kanban board": "Канбан-доска",
+		"Expand swimlane": "Развернуть дорожку",
+		"Collapse swimlane": "Свернуть дорожку",
 		"Expand column": "Развернуть колонку",
 		"Collapse column": "Свернуть колонку",
 		"Add card to": "Добавить карточку в",
 		"Card menu": "Меню карточки",
+		"Column menu": "Меню колонки",
 		Attachments: "Вложения",
 		Comments: "Комментарии",
 		Card: "Карточка",

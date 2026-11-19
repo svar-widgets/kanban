@@ -1,6 +1,6 @@
 {
 	"name": "@svar-ui/kanban-provider",
-	"version": "2.6.0",
+	"version": "2.7.0",
 	"description": "Data provider and REST proxy for the SVAR Kanban",
 	"license": "MIT",
 	"files": [
@@ -25,12 +25,16 @@
 	"devDependencies": {
 		"@svar-ui/kanban-store": "workspace:*",
 		"@svar-ui/lib-data-provider": "catalog:",
+		"@svar-ui/lib-state": "catalog:",
 		"@typescript/native-preview": "catalog:",
 		"typescript": "catalog:",
 		"vite-plus": "catalog:"
 	},
 	"inlinedDependencies": {
 		"@svar-ui/lib-data-provider": "1.7.2",
-		"@svar-ui/lib-state": "1.9.6"
+		"@svar-ui/lib-state": [
+			"1.9.6",
+			"1.9.7"
+		]
 	}
 }

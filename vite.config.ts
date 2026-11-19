@@ -16,6 +16,7 @@ export default defineConfig({
 		arrowParens: "avoid",
 		svelteSortOrder: "options-scripts-markup-styles",
 		printWidth: 80,
+		svelte: true,
 	},
 	test: {
 		exclude: ["**/node_modules", "apps/tests/**"],

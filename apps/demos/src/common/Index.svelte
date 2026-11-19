@@ -27,10 +27,7 @@
 	const isMobileView = $derived(innerWidth <= MOBILE_BREAKPOINT);
 
 	const skinSettings = $derived(
-		Object.assign(
-			skinSettings,
-			(skins.find(a => a.id === skin) || {}).props
-		)
+		Object.assign(skinSettings, (skins.find(a => a.id === skin) || {}).props)
 	);
 
 	function changeSkin({ value }) {
@@ -73,11 +70,7 @@
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						<img
-							src={LogoIcon}
-							alt="Logo icon"
-							class="box-title-img"
-						/></a
+						<img src={LogoIcon} alt="Logo icon" class="box-title-img" /></a
 					>
 					<div class="separator"></div>
 					<a
@@ -151,32 +144,25 @@
 								{@const Icon = option.icon}
 								<Icon />
 								{#if !isMobileView}
-									<span style="margin-left:4px;"
-										>{option.label}</span
-									>
+									<span style="margin-left:4px;">{option.label}</span>
 								{/if}
 							{/snippet}
 						</Segmented>
 					</div>
-					<div class="btn-box">
-						<a
-							href={link}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Button type="secondary" css="toggle-btn link-btn">
-								<div>
-									<img
-										src={GitHubLogoIcon}
-										alt="GitHub icon"
-									/>
-								</div>
-								{#if !isMobileView}
-									<span>See code on GitHub</span>
-								{/if}
-							</Button>
-						</a>
-					</div>
+					{#if link}
+						<div class="btn-box">
+							<a href={link} target="_blank" rel="noopener noreferrer">
+								<Button type="secondary" css="toggle-btn link-btn">
+									<div>
+										<img src={GitHubLogoIcon} alt="GitHub icon" />
+									</div>
+									{#if !isMobileView}
+										<span>See code on GitHub</span>
+									{/if}
+								</Button>
+							</a>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>

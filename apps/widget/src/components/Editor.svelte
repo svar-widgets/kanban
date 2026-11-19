@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { getContext, setContext, type ComponentProps } from "svelte";
-	import { Editor as EditorBase, registerEditorItem } from "@svar-ui/svelte-editor";
+	import {
+		Editor as EditorBase,
+		registerEditorItem,
+	} from "@svar-ui/svelte-editor";
 	import {
 		DatePicker,
 		MultiCombo,
@@ -22,9 +25,19 @@
 		api: any;
 		values?: never;
 	};
-	type EditorChangeEvent = Parameters<NonNullable<BaseEditorProps["onchange"]>>[0];
-	type EditorSaveEvent = Parameters<NonNullable<BaseEditorProps["onsave"]>>[0];
-	type EditorActionEvent = Parameters<NonNullable<BaseEditorProps["onaction"]>>[0];
+	// @svar-ui/svelte-editor declares its event props only via an `any` index
+	// signature and doesn't export payload types, so mirror them here
+	type EditorChangeEvent = {
+		key: string | number;
+		value: any;
+		input?: boolean;
+		update?: Record<string, any>;
+	};
+	type EditorSaveEvent = {
+		changes: (string | number)[];
+		values: Record<string, any>;
+	};
+	type EditorActionEvent = { item: any };
 
 	let {
 		api,

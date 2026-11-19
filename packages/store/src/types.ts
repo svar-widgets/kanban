@@ -8,6 +8,21 @@ export type Brandmark = {
 
 export type CardID = string | number;
 export type ColumnID = string | number;
+export type SwimlaneID = string | number;
+export type SwimlaneAccessor = ColumnAccessor;
+export type SwimlaneConfig = {
+	id: SwimlaneID;
+	label: string;
+	collapsed?: boolean;
+	css?: string;
+	metadata?: Record<string, any>;
+};
+export type SwimlaneCellView = { column: ColumnID; cards: KanbanCard[] };
+export type SwimlaneView = SwimlaneConfig & {
+	collapsed: boolean;
+	count: number;
+	cells: SwimlaneCellView[];
+};
 export type ColumnDataStatus = "unknown" | "loading" | "loaded";
 
 export type ColumnDataState = {
@@ -19,31 +34,60 @@ export type KanbanCard = {
 	[key: string]: any;
 };
 
+export type ColumnSummaryConfig<T = any> = {
+	id: string;
+	calculate: (cards: readonly KanbanCard[], column: ColumnConfig) => T;
+	format?: (value: T, column: ColumnConfig) => string;
+	css?: (value: T, column: ColumnConfig) => string;
+};
+
+export type ColumnSummaryResult<T = any> = {
+	id: string;
+	value: T;
+	text: string;
+	css?: string;
+};
+
+/** Column dimensions are outer-box CSS pixels. */
 export type ColumnConfig = {
+	[key: string]: any;
+	summaries?: ColumnSummaryConfig[];
 	id: ColumnID;
 	label: string;
 	css?: string;
 	metadata?: Record<string, any>;
-	cardLimit?: number | boolean;
+	width?: number;
+	cardWidth?: number;
+	cardHeight?: number;
 	addCard?: boolean;
+	/** Shows the header menu button for an outer `ContextMenu target="column"` (default `false`). */
+	menu?: boolean;
 	collapsed?: boolean;
 };
 
-export type ColumnView = {
+/**
+ * Projected column: custom `ColumnConfig` fields pass through unchanged;
+ * `summaries`, `dataStatus` and `cards` are computed and override same-named config fields.
+ */
+export type ColumnView = Omit<ColumnConfig, "summaries"> & {
+	width?: number;
+	cardWidth?: number;
+	cardHeight?: number;
 	id: ColumnID;
 	label: string;
 	css?: string;
 	metadata?: Record<string, any>;
-	cardLimit?: number | boolean;
 	addCard: boolean;
+	menu: boolean;
 	collapsed: boolean;
-	overLimit: boolean;
+	summaries: ColumnSummaryResult[];
 	dataStatus: ColumnDataStatus;
 	cards: KanbanCard[];
 };
 
 export type KanbanModel = {
 	columns: ColumnView[];
+	swimlanes: SwimlaneView[];
 };
 
 export type ColumnAccessor =
@@ -65,6 +109,8 @@ export type State = {
 	cards: CardsStore;
 	columns: ColumnConfig[];
 	columnAccessor: ColumnAccessor;
+	swimlanes: SwimlaneConfig[];
+	swimlaneAccessor: SwimlaneAccessor;
 	filters: Map<string, FilterPredicate>;
 	sort: SortCriterion;
 	editorData: KanbanCard | null;
@@ -148,17 +194,31 @@ export type ExportHelpers = {
 export interface IKanbanStore {
 	getState(): State;
 	setState(state: StateInput, ctx?: any): any;
-	pushUndo<A extends HistoryActionName>(action: A, ev: StoreActions[A]): void;
-	undo(): void;
-	redo(): void;
 	resetHistory(): void;
 }
 
 export interface StoreActions {
+	["add-column"]: {
+		column: Partial<ColumnConfig>;
+		id?: ColumnID;
+		before?: ColumnID | null;
+	};
+	["delete-column"]: { id: ColumnID };
+	["move-column"]: { id: ColumnID; before?: ColumnID | null };
+	["add-swimlane"]: {
+		swimlane: Partial<SwimlaneConfig>;
+		id?: SwimlaneID;
+		before?: SwimlaneID | null;
+	};
+	["delete-swimlane"]: { id: SwimlaneID };
+	["move-swimlane"]: { id: SwimlaneID; before?: SwimlaneID | null };
 	["add-card"]: {
 		card: Partial<KanbanCard>;
 		edit?: boolean;
 		id?: CardID;
+		/** Insert before this card; `null` appends. Wins over `after`. */
+		before?: CardID | null;
+		/** Convenience hint, normalized to `before` by the handler. */
 		after?: CardID;
 	};
 	["update-card"]: {
@@ -168,11 +228,14 @@ export interface StoreActions {
 	["move-card"]: {
 		id: CardID;
 		column?: ColumnID;
+		swimlane?: SwimlaneID;
 		before?: CardID | null;
 	};
+	["update-swimlane"]: { id: SwimlaneID; swimlane: Partial<SwimlaneConfig> };
 	["update-column"]: {
 		id: ColumnID;
 		column: Partial<ColumnConfig>;
+		skipProvider?: boolean;
 	};
 	["duplicate-card"]: {
 		id: CardID;
